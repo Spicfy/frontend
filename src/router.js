@@ -9,7 +9,7 @@ import NotFound from "./pages/NotFound.vue";
 import ForgotPassword from './pages/ForgotPassword.vue';
 
 import Settings from './pages/Settings.vue';
-
+import CreatePost from './pages/CreatePost.vue';
 const routes = [
     {
         path: '/',
@@ -45,6 +45,12 @@ const routes = [
         path: '/forgot-password',
         name: 'ForgotPassword',
         component: ForgotPassword
+    },
+    {
+        path: '/create-post',
+        name: 'CreatePost',
+        component: CreatePost
+
     }
 ];
 

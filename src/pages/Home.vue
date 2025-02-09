@@ -1,4 +1,7 @@
+
+
 <script setup>
+/* eslint-disable */
 import { ref, watchEffect } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -12,6 +15,26 @@ const isLoggedIn = ref(false); // Add a reactive state for login status
 
 const TOKEN_KEY = 'access_token';
 
+
+const posts = ref([
+  { id: 1, title: 'First Post', message: 'This is the first post.', type: 'news', author: 'John Doe' },
+  { id: 2, title: 'Update', message: 'An important update is available.', type: 'update', author: 'Jane Smith' },
+  { id: 3, title: 'Project Task', message: 'Complete task X by Friday.', type: 'task', author: 'Peter Jones' },
+    { id: 4, title: 'Another Post', message: 'This is another post.', type: 'news', author: 'Alice Brown' },
+    { id: 5, title: 'Update', message: 'A new update is now live.', type: 'update', author: 'Bob White' },
+    { id: 6, title: 'Task Reminder', message: 'Don\'t forget to complete task Y.', type: 'task', author: 'Eve Green' }
+]);
+
+const newPost = ref({
+    title: '',
+    message: '',
+    type: 'news', // Default type
+    author: '' // This should be set to the user who created it
+});
+const editingPost = ref(null);
+const loggedUserId = ref(null);
+
+const postTypes = ['news', 'update', 'task']; // Define the allowed post types
 
 
 const getAccessToken = () => {
@@ -53,6 +76,10 @@ const goToRegister = () => {
     router.push('/register');
 };
 
+const goToCreatePost = () => {
+    router.push('/create-post');
+}
+
 const logout = async () => {
     try{
         const token = getAccessToken();
@@ -81,6 +108,60 @@ const goToSettings = () => {
     router.push('/settings')
 }
 
+const fetchPosts = async () => {
+    try{
+        const response = await fetch('http://localhost:8000/api/posts');
+        if(response.ok){
+            posts.value = await response.json();
+        } else{
+            console.error('Failed to fetch posts:', response.statusText);
+        }
+    }catch(error){
+        console.error('Failed to fetch posts:', error.message);
+    }
+}
+
+const updatePost = async () => {
+    try{
+        const token = getAccessToken();
+        const response = await fetch(`http://localhost:8000/api/posts/${editingPost.value.id}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(editingPost.value)
+        });
+        if(response.ok){
+            fetchPosts();
+            editingPost.value = null;
+        }else{
+            console.error('Failed to update post:', response.statusText);
+        }
+    }catch(error){
+        console.error('Failed to update post:', error.message);
+    }
+}
+
+const deletePost = async (id) => {
+    try{
+        const token = getAcessToken();
+        const response = await fetch(`http://localhost:8000/api/posts/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        if(response.ok){
+            fetchPosts();
+        } else{
+            console.log('Error deleting Post:', error);
+        }
+    }catch(error){
+        console.error('Error deleting Post:', error.message);
+    }
+}
+
 watchEffect(() => {
     checkLoginStatus();
 })
@@ -102,15 +183,50 @@ watchEffect(() => {
       <main class="home-container">
         <h1>{{ message }}</h1>
       </main>
+
+     
+    <div class="pre-posts"><h1>Posts</h1>
+    <button v-if="isLoggedIn"  @click="goToCreatePost">Create Post</button>
+    </div>
+      <div class="post-grid">
+        <div v-for="post in posts" :key="post.id" class="post-card">
+            <h3>{{post.title}}</h3>
+            <p>Message: {{ post.message }}</p>
+            <p class="post-type">Type: {{post.type}}</p>
+            <p class="post-author">Author: {{post.author}}</p>
+
+            <div v-if="isLoggedIn && post.user_id === loggedUserId">
+                <button  @click="editingPost = { ...post}">Edit</button>
+                <button @click="deletePost(post.id)">Delete</button>
+            </div>
+        </div>
+      </div>
+
+
+
     </div>
   </template>
   
   <style scoped>
+
+  .pre-posts{
+    height: 100px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #007bff;
+
+  }
+  .pre-posts >*{
+    margin: 20px;
+  }
   .container {
-      height: 100vh;
-      width: 100vw;
+      overflow-x: hidden;
+      max-width: 100%;
       overflow: hidden;
       position: relative;
+     
   }
   .top {
     height: 100px;
@@ -166,4 +282,33 @@ watchEffect(() => {
       margin: 0;
       font-size: 2em;
   }
+  .post-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 0;
+    padding: 20px;
+    background-color: #555;
+
+
+  
+}
+.post-card > * {
+    text-align: center;
+}
+
+.post-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 300px;
+    background: white;
+    padding: 15px;
+    border: 1px solid #f0f0f0;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+
+    margin: 40px;
+}
+
   </style>
